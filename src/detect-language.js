@@ -46,17 +46,36 @@ function main(params) {
 
       // in case of errors during the call resolve with an error message according to the pattern 
       // found in the catch clause below
-
-      resolve({
-        statusCode: 200,
-        body: {
-          text: params.text, 
-          language: "<Best Language>",
-          confidence: 0.5,
-        },
-        headers: { 'Content-Type': 'application/json' }
+      const languageTranslator = new LanguageTranslatorV3({
+        version: '2018-05-01',
+        authenticator: new IamAuthenticator({
+          apikey: 'UagAtaVYBSg9FNmA3koEHb6sxvlGO1cMoImmCUqYCEpS',
+        }),
+         url: 'https://gateway-fra.watsonplatform.net/language-translator/api',
       });
 
+      const identifyParams = {
+        text: 'Language translator translates text from one language to another'
+      };
+
+      languageTranslator.identify(identifyParams)
+        .then(identifiedLanguages => {
+        console.log(JSON.stringify(identifiedLanguages, null, 2));
+        resolve({
+        statusCode: 200,
+        body: {
+          text: identifyParams.text, 
+          language: identifiedLanguages.result.languages[0].language,
+          confidence: identifiedLanguages.result.languages[0].confidence,
+        },
+          headers: { 'Content-Type': 'application/json' }
+        });
+      })
+      .catch(err => {
+        console.log('error:', err);
+        console.error('Error while initializing the AI service', err);
+        resolve(getTheErrorResponse('Error while communicating with the language service', defaultLanguage));
+      });
 
     } catch (err) {
       console.error('Error while initializing the AI service', err);
